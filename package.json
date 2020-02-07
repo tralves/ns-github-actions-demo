@@ -5,7 +5,7 @@
   "author": "Tiago Alves <tralves@gmail.com>",
   "license": "MIT",
   "nativescript": {
-    "id": "org.tralves.nsgithubactionsdemo",
+    "id": "dev.tiagoalves.nsgithubactionsdemo",
     "templateVersion": "v2",
     "tns-android": {
       "version": "6.0.0"
@@ -14,7 +14,7 @@
       "version": "6.0.1"
     }
   },
-  "dependencies": { 
+  "dependencies": {
     "@vue/devtools": "^5.0.6",
     "nativescript-socketio": "^3.2.1",
     "nativescript-vue-devtools": "^1.2.0",

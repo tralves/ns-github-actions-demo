@@ -1,0 +1,100 @@
+fastlane_version '2.131.0'
+
+lane :test do
+  print "TEST SUCCESSFUL!"
+end
+
+platform :ios do
+  # iOS Lanes
+
+  private_lane :setup_project do
+    if is_ci?
+      create_keychain(
+        name: "actiontest_keychain",
+        password: "meow",
+        default_keychain: true,
+        unlock: true,
+        timeout: 3600,
+        lock_when_sleeps: false
+      )
+    end
+  end
+
+  desc 'Fetch certificates and provisioning profiles'
+  lane :certificates do
+    match(type: 'development')
+    match(type: "appstore")
+    # match(type: "adhoc")
+  end
+
+  desc 'Build the iOS application.'
+  lane :build do
+    sh("tns", "prepare", "ios", "--release", "--clean", "--env.production")
+
+    match(
+      type: "appstore",
+      readonly: is_ci,
+      keychain_name:  is_ci? ? "actiontest_keychain" : nil,
+      keychain_password: is_ci? ? "meow" : nil)
+    
+    build_app(
+      scheme: "nsgithubactionsdemo",
+      workspace: './platforms/ios/nsgithubactionsdemo.xcworkspace',
+      export_method: "app-store"
+    )
+  end
+
+  desc 'Ship to Testflight.'
+  lane :beta do
+    build
+
+    changelog_from_git_commits
+
+    upload_to_testflight(
+      beta_app_feedback_email: "tralves@gmail.com",
+      beta_app_description: "Demo project using fastlane and GitHub actions.",
+      demo_account_required: false,
+      distribute_external: true,
+      groups: ["beta testers"],
+      notify_external_testers: true,
+      beta_app_review_info: {
+        contact_email: "tralves@gmail.com",
+        contact_first_name: "Tiago",
+        contact_last_name: "Alves",
+        contact_phone: "+351 9********",
+        demo_account_name: "",
+        demo_account_password: "",
+        notes: "<3 Thank you for reviewing!"
+      },
+    )
+  end
+
+end
+
+platform :android do
+
+  desc 'Build the Android application.'
+  lane :build do
+    sh("tns", "build", "android", "--release", "--clean", "--env.production",
+        "--key-store-path", "../keys/nsgithubactionsdemo.keystore",
+        "--key-store-password", ENV["KEYSTORE_PASSWORD"],
+        "--key-store-alias", ENV["KEYSTORE_ALIAS"],
+        "--key-store-alias-password", ENV["KEYSTORE_ALIAS_PASSWORD"]
+      )
+  end
+
+  desc 'Ship to Playstore Alpha.'
+  lane :alpha do
+    build
+
+    changelog_from_git_commits
+
+    upload_to_play_store(
+      track: 'alpha',
+      track_promote_to: 'alpha',
+      json_key_data: ENV["PLAYSTORE_JSON_KEY_DATA"],
+      apk: './platforms/android/app/build/outputs/apk/release/app-release.apk'
+    )
+  end
+
+end
